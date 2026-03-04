@@ -553,11 +553,15 @@
 
     <div class="result-section-label">Reservering</div>
     <div class="result-row">
-      <div><div class="row-name">Vakantiegeld opbouw</div><div class="row-sub" id="r-vak-pct">8% per month accrued</div></div>
+      <div><div class="row-name">Vakantiegeld opbouw (bruto)</div><div class="row-sub" id="r-vak-pct">8% per month accrued</div></div>
       <div class="row-value pos" id="r-vak-monthly">—</div>
     </div>
     <div class="result-row indent">
-      <div><div class="row-name dim">└ Jaarlijkse uitbetaling (May/June)</div></div>
+      <div><div class="row-name dim">└ Loonheffing BT on payout</div><div class="row-sub" id="r-vak-bt-sub">BT rate × annual accrual</div></div>
+      <div class="row-value neg" id="r-vak-bt">—</div>
+    </div>
+    <div class="result-row indent">
+      <div><div class="row-name dim">└ Netto uitbetaling (May/June)</div><div class="row-sub">annual gross minus BT tax</div></div>
       <div class="row-value neu" id="r-vak-annual">—</div>
     </div>
 
@@ -569,9 +573,9 @@
         <div class="net-sub" id="banner-net-sub">to NL bank account</div>
       </div>
       <div class="net-vak">
-        <div class="net-label">Vakantiegeld (annual)</div>
+        <div class="net-label">Vakantiegeld netto (May/June)</div>
         <div class="net-amount" id="banner-vak">€ —</div>
-        <div class="net-sub">paid out in May / June</div>
+        <div class="net-sub" id="banner-vak-sub">after BT loonheffing</div>
       </div>
     </div>
 
@@ -741,8 +745,13 @@
     const netNoUnion = adjusted - wia - pension - lh;
 
     // Step 10: Vakantiegeld
-    const vakMon = adjusted * (vakPct / 100);
-    const vakAnn = vakMon * 12;
+    // Accrues monthly (bruto), paid out once/year (May/June)
+    // Taxed at BT (bijzonder tarief) on payout — validated from May 2025 payslip:
+    // vakAnn=2115.43, BT=39.9%, loonheffing BT=844.06, net payout=1271.37
+    const vakMon    = adjusted * (vakPct / 100);
+    const vakAnn    = vakMon * 12;
+    const vakBtTax  = vakAnn * r.BT_RATE;
+    const vakNetAnn = vakAnn - vakBtTax;
 
     // Step 11: Reiskostenvergoeding (travel allowance)
     // Untaxed portion: up to €0.23/km — added to net directly, no tax
@@ -834,9 +843,13 @@
       g('row-travel-tax').style.display     = 'none';
       g('row-net-travel').style.display     = 'none';
     }
-    g('r-vak-pct').textContent     = pct(vakPct,1) + '% of gross, accrued monthly';
+    g('r-vak-pct').textContent     = pct(vakPct,1) + '% of gross · monthly accrual (bruto)';
     g('r-vak-monthly').textContent = eur(vakMon);
-    g('r-vak-annual').textContent  = eur(vakAnn);
+    g('r-vak-bt-sub').textContent  = pct(r.BT_RATE * 100, 1) + ' BT × ' + eur(vakAnn) + ' annual';
+    g('r-vak-bt').textContent      = '- ' + eur(vakBtTax);
+    g('r-vak-annual').textContent  = eur(vakNetAnn);
+    g('banner-vak').textContent    = eur(vakNetAnn);
+    g('banner-vak-sub').textContent = eur(vakAnn) + ' gross − ' + eur(vakBtTax) + ' BT tax';
 
     const displayNet = travelTotal > 0 ? netWithTravel : net;
     g('banner-net').textContent     = eur(displayNet);
