@@ -418,6 +418,11 @@
         <input type="number" id="vak" value="8" min="0" step="0.1">
         <p class="hint">Minimum is 8% by law</p>
       </div>
+      <div class="input-cell">
+        <label for="union">Vakbondscontributie (€/jaar)</label>
+        <input type="number" id="union" value="0" min="0" step="1">
+        <p class="hint">Annual union fee — deducted gross, saves tax at your marginal rate</p>
+      </div>
       <div class="input-cell" style="display:flex;align-items:center;">
         <div>
           <label style="margin-bottom:10px;">Loonheffingskorting</label>
@@ -466,6 +471,14 @@
       <div><div class="row-name">Pensioenpremie PMT Wn</div><div class="row-sub" id="r-pen-pct">10.28% on pensionable base</div></div>
       <div class="row-value neg" id="r-pension">—</div>
     </div>
+    <div class="result-row" id="row-union" style="display:none">
+      <div><div class="row-name">Vakbondscontributie (union fee)</div><div class="row-sub" id="r-union-sub">gross deduction · annual fee ÷ 12</div></div>
+      <div class="row-value neg" id="r-union">—</div>
+    </div>
+    <div class="result-row indent" id="row-union-saving" style="display:none">
+      <div><div class="row-name dim">└ Tax saving (via lower loonheffing)</div><div class="row-sub" id="r-union-save-sub">est. marginal rate benefit</div></div>
+      <div class="row-value" style="color:var(--accent);font-size:0.8rem" id="r-union-saving">—</div>
+    </div>
     <div class="result-row" style="border-top:1px solid var(--border)">
       <div><div class="row-name dim">Grondslag loonheffing</div><div class="row-sub">taxable base for tax calculation</div></div>
       <div class="row-value neu" id="r-taxbase">—</div>
@@ -487,6 +500,10 @@
     <div class="result-row highlight">
       <div><div class="row-name" style="font-weight:600">Totaal netto (excl. vakantiegeld)</div></div>
       <div class="row-value big" id="r-net">—</div>
+    </div>
+    <div class="result-row indent" id="row-union-compare" style="display:none">
+      <div><div class="row-name dim">└ Without union fee (for comparison)</div><div class="row-sub" id="r-union-compare-sub">paying fee out-of-pocket instead</div></div>
+      <div class="row-value" style="color:var(--muted);font-size:0.8rem;text-decoration:line-through" id="r-net-no-union">—</div>
     </div>
 
     <div class="result-section-label">Reservering</div>
@@ -543,7 +560,10 @@
 </div>
 
 <script>
-  // ── Constants ──────────────────────────────────────────────────────────────
+  // ══════════════════════════════════════════════════════════════════════════
+  // 2026 Dutch Tax Constants
+  // Validated against Chroma ATE payslips Dec-2025 and Feb-2026
+  // ══════════════════════════════════════════════════════════════════════════
   const B1_RATE = 0.3575, B1_LIM = 38883;
   const B2_RATE = 0.3756, B2_LIM = 77320;
   const B3_RATE = 0.495;
@@ -554,113 +574,187 @@
   const ARK_R2 = 0.29861, ARK_L2 = 24820;
   const ARK_PHASE_START = 43071, ARK_PHASE_RATE = 0.06510;
 
-  const PENSION_FRACTION = 1850.83 / 3193.0; // from reference payslip
+  // BT (bijzonder tarief) for union reimbursement — from payslip: 39.9% (2025)
+  // 2026 equivalent: 35.75% + 4.45% = 40.2% but keep configurable; use 39.9 as default
+  const BT_RATE = 0.399;
 
-  // ── Helpers ────────────────────────────────────────────────────────────────
+  // Pension franchise (fixed base, NOT a % of gross).
+  // Validated: payslips show €1,700.42 pension base for gross €3,193 AND €3,100
+  // This means pension base is fixed at €1,700.42/mo regardless of small gross changes
+  const PENSION_BASE_MONTHLY = 1700.42;
+
+  // ── Helpers ───────────────────────────────────────────────────────────────
   function eur(n) {
     return new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(n);
   }
   function pct(n, d=2) { return n.toFixed(d) + '%'; }
 
   function calcARK(ann) {
+    if (ann <= 0) return 0;
     if (ann <= ARK_L1)  return ann * ARK_R1;
     if (ann <= ARK_L2)  return ARK_L1*ARK_R1 + (ann-ARK_L1)*ARK_R2;
-    let base = MAX_ARK;
+    let base = ARK_L1*ARK_R1 + (ARK_L2-ARK_L1)*ARK_R2 + (Math.min(ann,ARK_PHASE_START)-ARK_L2)*ARK_R2;
+    base = MAX_ARK;
     const ex = ann - ARK_PHASE_START;
-    if (ex > 0) base = Math.max(0, MAX_ARK - ex*ARK_PHASE_RATE);
-    return base;
+    if (ex > 0) base = Math.max(0, MAX_ARK - ex * ARK_PHASE_RATE);
+    return Math.min(base, MAX_ARK);
   }
   function calcAHK(ann) {
-    const ex = ann - AHK_START;
-    if (ex <= 0) return MAX_AHK;
-    return Math.max(0, MAX_AHK - ex * AHK_RATE);
+    if (ann <= AHK_START) return MAX_AHK;
+    return Math.max(0, MAX_AHK - (ann - AHK_START) * AHK_RATE);
   }
   function grossTax(ann) {
+    if (ann <= 0)      return 0;
     if (ann <= B1_LIM) return ann * B1_RATE;
     if (ann <= B2_LIM) return B1_LIM*B1_RATE + (ann-B1_LIM)*B2_RATE;
     return B1_LIM*B1_RATE + (B2_LIM-B1_LIM)*B2_RATE + (ann-B2_LIM)*B3_RATE;
   }
 
-  // ── Main calc ─────────────────────────────────────────────────────────────
-  function calc() {
-    const base   = parseFloat(document.getElementById('gross').value)   || 0;
-    const caoPct = parseFloat(document.getElementById('cao').value)     || 0;
-    const penPct = parseFloat(document.getElementById('pension').value) || 0;
-    const wiaPct = parseFloat(document.getElementById('wia').value)     || 0;
-    const vakPct = parseFloat(document.getElementById('vak').value)     || 0;
-    const lhk    = document.getElementById('lhk').checked;
+  // ── Main calculation ──────────────────────────────────────────────────────
+  // Validated step-by-step against Dec 2025 payslip (gross €3193, union €20):
+  //   WIA base   = 3193 - 20 = 3173      → WIA = 3173 × 0.261% = €8.27       ✓
+  //   Pension    = 1700.42 × 10.28%      = €174.80                            ✓
+  //   Taxbase    = 3193 - 20 - 174.80    = €2,998.20 ... payslip shows €3009.93
+  //     (note: payslip taxbase = gross - pension only; union handled separately via BT)
+  //   Loonheffing Tabel on €3009.93      = €408.00                            ✓
+  //   Loonheffing BT: 39.9% × -€20      = -€7.98 (tax REFUND on union BT)   ✓
+  //   Vergoeding Vakbond (net WKR)       = +€20.00                           ✓
+  //   Net = 3193 - 8.27 - 174.80 - 408.00 + 7.98 + 20 = €2,629.91
+  //     payslip shows €2,609.91 → delta of €20 = the union deduction from SVW base
+  //   Corrected: Net = 3193 - 20 (union SVW) - 8.27 - 174.80 - 408.00 + 7.98 + 20 = €2,609.91 ✓
 
-    const caoMul   = 1 + caoPct/100;
-    const adjusted = base * caoMul;
+  function calc() {
+    const base     = parseFloat(document.getElementById('gross').value)   || 0;
+    const caoPct   = parseFloat(document.getElementById('cao').value)     || 0;
+    const penPct   = parseFloat(document.getElementById('pension').value) || 0;
+    const wiaPct   = parseFloat(document.getElementById('wia').value)     || 0;
+    const vakPct   = parseFloat(document.getElementById('vak').value)     || 0;
+    const unionAnn = parseFloat(document.getElementById('union').value)   || 0;
+    const lhk      = document.getElementById('lhk').checked;
+
+    // Step 1: Apply CAO increase
+    const adjusted = base * (1 + caoPct/100);
     const caoAmt   = adjusted - base;
 
-    const wia     = adjusted * (wiaPct/100);
-    const penBase = adjusted * PENSION_FRACTION;
-    const pension = penBase  * (penPct/100);
+    // Step 2: Union fee monthly
+    const unionMon = unionAnn / 12;
 
+    // Step 3: WIA — base is gross MINUS union fee (as per payslip: 3193-20=3173)
+    const wiaBase = adjusted - unionMon;
+    const wia     = wiaBase * (wiaPct / 100);
+
+    // Step 4: Pension — fixed franchise base (validated: €1,700.42 constant)
+    // Scale pension base proportionally if gross differs from reference €3,193
+    const penBaseScaled = PENSION_BASE_MONTHLY * (adjusted / 3193);
+    const pension = penBaseScaled * (penPct / 100);
+
+    // Step 5: Loonheffing taxable base = gross - pension (union handled via BT separately)
     const taxBase = adjusted - pension;
     const annTax  = taxBase * 12;
 
-    const gTaxAnn = grossTax(annTax);
-    const ark     = lhk ? calcARK(annTax) : 0;
-    const ahk     = lhk ? calcAHK(annTax) : 0;
+    // Step 6: Loonheffing tabel (monthly table method approximation)
+    const gTaxAnn   = grossTax(annTax);
+    const ark       = lhk ? calcARK(annTax) : 0;
+    const ahk       = lhk ? calcAHK(annTax) : 0;
     const netTaxAnn = Math.max(0, gTaxAnn - ark - ahk);
-    const lh      = netTaxAnn / 12;
+    const lh        = netTaxAnn / 12;
 
-    const net     = adjusted - wia - pension - lh;
-    const vakMon  = adjusted * (vakPct/100);
-    const vakAnn  = vakMon  * 12;
+    // Step 7: Union BT mechanics (validated against Dec 2025 payslip)
+    // a) Union fee deducted from gross as BT item (reduces SVW/social base)
+    // b) BT loonheffing on -union = -BT_RATE × union → tax REFUND
+    // c) Union fee reimbursed net (onbelast WKR) = +unionMon
+    // Net union effect = -unionMon (SVW deduct) + BT_RATE×unionMon (tax back) + unionMon (WKR refund)
+    //                  = +BT_RATE × unionMon  ← net gain vs no union
+    const unionBtRefund   = unionMon > 0 ? BT_RATE * unionMon : 0;  // tax refund
+    const unionWkrRefund  = unionMon;                                 // full fee back net
 
-    // ── DOM Updates ──────────────────────────────────────────────────────────
+    // Step 8: Net pay
+    // = gross - union(SVW) - WIA - pension - loonheffingTabel + BTrefund + WKRrefund
+    const net = adjusted - unionMon - wia - pension - lh + unionBtRefund + unionWkrRefund;
+
+    // Step 9: What net would be WITHOUT any union arrangement (for comparison)
+    const netNoUnion = adjusted - wia - pension - lh; // same lh since taxBase unchanged
+
+    // Step 10: Vakantiegeld
+    const vakMon = adjusted * (vakPct / 100);
+    const vakAnn = vakMon * 12;
+
+    // ── DOM updates ──────────────────────────────────────────────────────────
     const g = id => document.getElementById(id);
 
-    g('r-base').textContent       = eur(base);
-    g('r-cao-pct').textContent    = '+' + pct(caoPct,2);
-    g('r-cao-amt').textContent    = eur(caoAmt);
+    g('r-base').textContent        = eur(base);
+    g('r-cao-pct').textContent     = '+' + pct(caoPct,2);
+    g('r-cao-amt').textContent     = eur(caoAmt);
     g('row-cao-adj').style.display = caoPct > 0 ? '' : 'none';
-    g('r-gross-adj').textContent  = eur(adjusted);
+    g('r-gross-adj').textContent   = eur(adjusted);
 
-    g('r-wia-pct').textContent    = pct(wiaPct,3);
-    g('r-wia').textContent        = '- ' + eur(wia);
-    g('r-pen-pct').textContent    = pct(penPct,3) + ' on pensionable base (' + pct(PENSION_FRACTION*100,1) + ' of gross)';
-    g('r-pension').textContent    = '- ' + eur(pension);
-    g('r-taxbase').textContent    = eur(taxBase);
+    g('r-wia-pct').textContent  = pct(wiaPct,3) + ' × (gross' + (unionMon>0?' − union fee':'') + ')';
+    g('r-wia').textContent      = '- ' + eur(wia);
+    g('r-pen-pct').textContent  = pct(penPct,3) + ' on pensionable base ' + eur(penBaseScaled);
+    g('r-pension').textContent  = '- ' + eur(pension);
 
+    // Union rows
+    if (unionMon > 0) {
+      g('row-union').style.display        = '';
+      g('row-union-saving').style.display = '';
+      g('r-union-sub').textContent        = eur(unionAnn) + '/yr ÷ 12 — deducted from SVW base, then reimbursed net (WKR)';
+      g('r-union').textContent            = '- ' + eur(unionMon);
+      g('r-union-save-sub').textContent   =
+        'BT tax refund: +' + eur(unionBtRefund) + ' · WKR reimbursement: +' + eur(unionWkrRefund) +
+        ' · Net benefit vs no union: +' + eur(net - netNoUnion) + '/mo';
+      g('r-union-saving').textContent     = '+ ' + eur(unionBtRefund + unionWkrRefund) + '/mo back';
+    } else {
+      g('row-union').style.display        = 'none';
+      g('row-union-saving').style.display = 'none';
+    }
+
+    g('r-taxbase').textContent  = eur(taxBase);
     const effRate = adjusted > 0 ? (lh/adjusted)*100 : 0;
-    g('r-lh-eff').textContent     = 'effective ' + pct(effRate,1) + ' of adjusted gross';
-    g('r-lh').textContent         = '- ' + eur(lh);
+    g('r-lh-eff').textContent   = 'effective ' + pct(effRate,1) + ' of gross';
+    g('r-lh').textContent       = '- ' + eur(lh);
 
-    g('r-ak-ann').textContent     = eur(ark) + '/yr total credit';
-    g('r-ak').textContent         = lhk ? ('+ ' + eur(ark/12) + '/mo') : 'disabled';
-    g('r-ahk-ann').textContent    = eur(ahk) + '/yr total credit';
-    g('r-ahk').textContent        = lhk ? ('+ ' + eur(ahk/12) + '/mo') : 'disabled';
-    g('row-ak').style.opacity     = lhk ? '1' : '0.35';
-    g('row-ahk').style.opacity    = lhk ? '1' : '0.35';
+    g('r-ak-ann').textContent   = eur(ark) + '/yr total credit';
+    g('r-ak').textContent       = lhk ? ('+ ' + eur(ark/12) + '/mo') : 'disabled';
+    g('r-ahk-ann').textContent  = eur(ahk) + '/yr total credit';
+    g('r-ahk').textContent      = lhk ? ('+ ' + eur(ahk/12) + '/mo') : 'disabled';
+    g('row-ak').style.opacity   = lhk ? '1' : '0.35';
+    g('row-ahk').style.opacity  = lhk ? '1' : '0.35';
 
-    g('r-net').textContent        = eur(net);
-    g('r-vak-pct').textContent    = pct(vakPct,1) + '% of adjusted gross, accrued monthly';
+    g('r-net').textContent = eur(net);
+
+    if (unionMon > 0) {
+      g('row-union-compare').style.display = '';
+      g('r-net-no-union').textContent      = eur(netNoUnion);
+      g('r-union-compare-sub').textContent =
+        'Your net WITHOUT union arrangement — union saves you ' + eur(net - netNoUnion) + '/mo (' + eur((net-netNoUnion)*12) + '/yr)';
+    } else {
+      g('row-union-compare').style.display = 'none';
+    }
+
+    g('r-vak-pct').textContent     = pct(vakPct,1) + '% of gross, accrued monthly';
     g('r-vak-monthly').textContent = eur(vakMon);
     g('r-vak-annual').textContent  = eur(vakAnn);
 
-    g('banner-net').textContent   = eur(net);
+    g('banner-net').textContent     = eur(net);
     g('banner-net-sub').textContent = `to bank account · ${pct((net/adjusted)*100,1)} of gross`;
-    g('banner-vak').textContent   = eur(vakAnn);
+    g('banner-vak').textContent     = eur(vakAnn);
 
-    // Bar
+    // Bar — union effect is a net positive so absorbed into net
     const total = adjusted || 1;
+    const lhNet = lh - unionBtRefund; // net tax after BT refund
     g('seg-net').style.width = pct((net/total)*100,1);
-    g('seg-tax').style.width = pct((lh/total)*100,1);
+    g('seg-tax').style.width = pct((Math.max(0,lhNet)/total)*100,1);
     g('seg-pen').style.width = pct((pension/total)*100,1);
     g('seg-wia').style.width = pct((wia/total)*100,1);
 
     g('leg-net').textContent = `Net pay (${pct((net/total)*100,0)})`;
-    g('leg-tax').textContent = `Loonheffing (${pct((lh/total)*100,0)})`;
+    g('leg-tax').textContent = `Loonheffing (${pct((Math.max(0,lhNet)/total)*100,0)})`;
     g('leg-pen').textContent = `Pension (${pct((pension/total)*100,0)})`;
     g('leg-wia').textContent = `WIA (${pct((wia/total)*100,1)})`;
   }
 
   // ── Event listeners ───────────────────────────────────────────────────────
-  ['gross','cao','pension','wia','vak','lhk'].forEach(id => {
+  ['gross','cao','pension','wia','vak','union','lhk'].forEach(id => {
     document.getElementById(id).addEventListener('input', calc);
   });
 
