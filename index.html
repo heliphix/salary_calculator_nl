@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>NL Payslip Calculator 2026</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0d0f14;
+      --surface: #14171f;
+      --card: #1a1e28;
+      --border: #252a38;
+      --accent: #4fffb0;
+      --accent2: #3b82f6;
+      --warn: #f97316;
+      --danger: #ef4444;
+      --text: #e8eaf0;
+      --muted: #6b7280;
+      --mono: 'DM Mono', monospace;
+      --sans: 'Syne', sans-serif;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      min-height: 100vh;
+      padding: 0;
+      overflow-x: hidden;
+    }
+
+    /* Grid background */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(79,255,176,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(79,255,176,0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .page {
+      position: relative;
+      z-index: 1;
+      max-width: 780px;
+      margin: 0 auto;
+      padding: 48px 24px 80px;
+    }
+
+    /* Header */
+    header {
+      margin-bottom: 48px;
+      animation: fadeUp 0.6s ease both;
+    }
+    .flag { font-size: 2rem; line-height: 1; }
+    h1 {
+      font-size: clamp(2rem, 5vw, 3.2rem);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.05;
+      margin-top: 12px;
+      background: linear-gradient(135deg, var(--accent) 0%, #38bdf8 60%, #a78bfa 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .subtitle {
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      color: var(--muted);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-top: 8px;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(79,255,176,0.08);
+      border: 1px solid rgba(79,255,176,0.2);
+      color: var(--accent);
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      letter-spacing: 0.1em;
+      padding: 4px 10px;
+      border-radius: 100px;
+      margin-top: 16px;
+    }
+    .badge::before { content: '●'; font-size: 0.5rem; }
+
+    /* Cards */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      margin-bottom: 20px;
+      animation: fadeUp 0.6s ease both;
+    }
+    .card:nth-child(2) { animation-delay: 0.1s; }
+    .card:nth-child(3) { animation-delay: 0.2s; }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 24px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(255,255,255,0.02);
+    }
+    .card-title {
+      font-size: 0.7rem;
+      font-family: var(--mono);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .card-tag {
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      background: rgba(59,130,246,0.15);
+      color: var(--accent2);
+      border: 1px solid rgba(59,130,246,0.25);
+      padding: 3px 8px;
+      border-radius: 6px;
+      letter-spacing: 0.08em;
+    }
+
+    /* Input grid */
+    .input-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1px;
+      background: var(--border);
+    }
+    @media (max-width: 540px) {
+      .input-grid { grid-template-columns: 1fr; }
+    }
+    .input-cell {
+      background: var(--card);
+      padding: 20px 24px;
+      transition: background 0.15s;
+    }
+    .input-cell:hover { background: #1e2230; }
+    .input-cell.full { grid-column: 1 / -1; }
+
+    label {
+      display: block;
+      font-family: var(--mono);
+      font-size: 0.67rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    input[type="number"] {
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 1.1rem;
+      font-weight: 500;
+      padding: 10px 14px;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      -moz-appearance: textfield;
+    }
+    input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
+    input[type="number"]:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(79,255,176,0.1);
+    }
+    .hint {
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      color: var(--muted);
+      margin-top: 5px;
+    }
+
+    /* Checkbox toggle */
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      cursor: pointer;
+    }
+    .toggle {
+      position: relative;
+      width: 40px;
+      height: 22px;
+      flex-shrink: 0;
+    }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .slider {
+      position: absolute;
+      inset: 0;
+      background: var(--border);
+      border-radius: 100px;
+      transition: background 0.2s;
+      cursor: pointer;
+    }
+    .slider::before {
+      content: '';
+      position: absolute;
+      width: 16px; height: 16px;
+      left: 3px; top: 3px;
+      background: var(--muted);
+      border-radius: 50%;
+      transition: transform 0.2s, background 0.2s;
+    }
+    .toggle input:checked + .slider { background: rgba(79,255,176,0.2); border: 1px solid rgba(79,255,176,0.4); }
+    .toggle input:checked + .slider::before { transform: translateX(18px); background: var(--accent); }
+    .toggle-label { font-size: 0.85rem; color: var(--text); line-height: 1.3; }
+    .toggle-desc { font-family: var(--mono); font-size: 0.65rem; color: var(--muted); margin-top: 2px; }
+
+    /* Results table */
+    .result-section-label {
+      font-family: var(--mono);
+      font-size: 0.62rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--muted);
+      padding: 14px 24px 6px;
+      border-top: 1px solid var(--border);
+    }
+    .result-section-label:first-child { border-top: none; padding-top: 20px; }
+
+    .result-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 9px 24px;
+      border-bottom: 1px solid rgba(255,255,255,0.03);
+      transition: background 0.1s;
+    }
+    .result-row:hover { background: rgba(255,255,255,0.02); }
+    .result-row.indent { padding-left: 40px; }
+    .result-row.highlight {
+      background: rgba(79,255,176,0.04);
+      border-top: 1px solid rgba(79,255,176,0.1);
+      border-bottom: 1px solid rgba(79,255,176,0.1);
+    }
+
+    .row-name { font-size: 0.85rem; color: var(--text); }
+    .row-name.dim { color: var(--muted); font-size: 0.8rem; }
+    .row-sub { font-family: var(--mono); font-size: 0.65rem; color: var(--muted); margin-top: 1px; }
+
+    .row-value {
+      font-family: var(--mono);
+      font-size: 0.92rem;
+      font-weight: 500;
+      text-align: right;
+    }
+    .row-value.pos { color: var(--text); }
+    .row-value.neg { color: var(--danger); }
+    .row-value.neu { color: var(--accent2); }
+    .row-value.big { font-size: 1rem; color: var(--accent); font-weight: 700; }
+
+    /* Net banner */
+    .net-banner {
+      margin: 0;
+      padding: 28px 24px;
+      background: linear-gradient(135deg, rgba(79,255,176,0.08), rgba(59,130,246,0.06));
+      border-top: 1px solid rgba(79,255,176,0.15);
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+    .net-main { }
+    .net-label {
+      font-family: var(--mono);
+      font-size: 0.68rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgba(79,255,176,0.6);
+    }
+    .net-amount {
+      font-size: clamp(2rem, 6vw, 2.8rem);
+      font-weight: 800;
+      color: var(--accent);
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+      margin-top: 4px;
+    }
+    .net-sub {
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+    .net-vak {
+      text-align: right;
+    }
+    .net-vak .net-label { color: rgba(59,130,246,0.7); }
+    .net-vak .net-amount { font-size: 1.6rem; color: var(--accent2); }
+
+    /* Stacked bar */
+    .bar-wrap { padding: 20px 24px; border-top: 1px solid var(--border); }
+    .bar-label {
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+    .bar {
+      display: flex;
+      height: 10px;
+      border-radius: 100px;
+      overflow: hidden;
+      background: var(--surface);
+    }
+    .bar-seg {
+      height: 100%;
+      transition: width 0.4s cubic-bezier(.4,0,.2,1);
+    }
+    .bar-net { background: var(--accent); }
+    .bar-tax { background: var(--warn); }
+    .bar-pen { background: var(--accent2); }
+    .bar-wia { background: #a78bfa; }
+
+    .legend {
+      display: flex;
+      gap: 16px;
+      margin-top: 10px;
+      flex-wrap: wrap;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-family: var(--mono);
+      font-size: 0.66rem;
+      color: var(--muted);
+    }
+    .dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    /* Footer */
+    .footer {
+      margin-top: 40px;
+      padding: 20px 24px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--card);
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      color: var(--muted);
+      line-height: 1.8;
+      animation: fadeUp 0.6s ease 0.3s both;
+    }
+    .footer strong { color: rgba(255,255,255,0.4); }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* CAO highlight */
+    #cao-val { color: var(--accent); font-weight: 700; }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <div class="flag">🇳🇱</div>
+    <h1>NL Payslip<br>Calculator</h1>
+    <p class="subtitle">Salarisspecificatie berekening · The Netherlands</p>
+    <div class="badge">2026 Belastingdienst Rates</div>
+  </header>
+
+  <!-- INPUTS -->
+  <div class="card" style="animation-delay:0.05s">
+    <div class="card-header">
+      <span class="card-title">Invoer / Input Parameters</span>
+      <span class="card-tag">Editable</span>
+    </div>
+    <div class="input-grid">
+      <div class="input-cell">
+        <label for="gross">Bruto maandsalaris (€)</label>
+        <input type="number" id="gross" value="3193" min="0" step="1">
+        <p class="hint">Your monthly gross salary</p>
+      </div>
+      <div class="input-cell">
+        <label for="cao">CAO verhoging (%)</label>
+        <input type="number" id="cao" value="0" min="0" step="0.1">
+        <p class="hint">Enter 0 for no CAO increase</p>
+      </div>
+      <div class="input-cell">
+        <label for="pension">Pensioenpremie PMT Wn (%)</label>
+        <input type="number" id="pension" value="10.28" min="0" step="0.01">
+        <p class="hint">Default: 10.28% (from payslip)</p>
+      </div>
+      <div class="input-cell">
+        <label for="wia">WIA werknemer (%)</label>
+        <input type="number" id="wia" value="0.261" min="0" step="0.001">
+        <p class="hint">Default: 0.261% (from payslip)</p>
+      </div>
+      <div class="input-cell">
+        <label for="vak">Vakantiegeld (%)</label>
+        <input type="number" id="vak" value="8" min="0" step="0.1">
+        <p class="hint">Minimum is 8% by law</p>
+      </div>
+      <div class="input-cell" style="display:flex;align-items:center;">
+        <div>
+          <label style="margin-bottom:10px;">Loonheffingskorting</label>
+          <label class="toggle-row">
+            <span class="toggle">
+              <input type="checkbox" id="lhk" checked>
+              <span class="slider"></span>
+            </span>
+            <span>
+              <div class="toggle-label">Korting toepassen</div>
+              <div class="toggle-desc">Uncheck if applied at another employer</div>
+            </span>
+          </label>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RESULTS -->
+  <div class="card" style="animation-delay:0.15s">
+    <div class="card-header">
+      <span class="card-title">Salarisspecificatie</span>
+      <span class="card-tag" id="period-tag">2026-M</span>
+    </div>
+
+    <div class="result-section-label">Bruto</div>
+    <div class="result-row">
+      <div><div class="row-name">Stam salaris (base)</div><div class="row-sub">as entered</div></div>
+      <div class="row-value pos" id="r-base">—</div>
+    </div>
+    <div class="result-row" id="row-cao-adj" style="display:none">
+      <div><div class="row-name">CAO verhoging</div><div class="row-sub" id="r-cao-pct">+0%</div></div>
+      <div class="row-value neu" id="r-cao-amt">—</div>
+    </div>
+    <div class="result-row highlight">
+      <div><div class="row-name" style="font-weight:600">Bruto salaris (adjusted)</div></div>
+      <div class="row-value big" id="r-gross-adj">—</div>
+    </div>
+
+    <div class="result-section-label">Inhoudingen (deductions)</div>
+    <div class="result-row">
+      <div><div class="row-name">WIA-werknemersverzekering</div><div class="row-sub" id="r-wia-pct">0.261%</div></div>
+      <div class="row-value neg" id="r-wia">—</div>
+    </div>
+    <div class="result-row">
+      <div><div class="row-name">Pensioenpremie PMT Wn</div><div class="row-sub" id="r-pen-pct">10.28% on pensionable base</div></div>
+      <div class="row-value neg" id="r-pension">—</div>
+    </div>
+    <div class="result-row" style="border-top:1px solid var(--border)">
+      <div><div class="row-name dim">Grondslag loonheffing</div><div class="row-sub">taxable base for tax calculation</div></div>
+      <div class="row-value neu" id="r-taxbase">—</div>
+    </div>
+    <div class="result-row">
+      <div><div class="row-name">Loonheffing (wage tax)</div><div class="row-sub" id="r-lh-eff">effective rate</div></div>
+      <div class="row-value neg" id="r-lh">—</div>
+    </div>
+    <div class="result-row indent" id="row-ak">
+      <div><div class="row-name dim">└ incl. Arbeidskorting</div><div class="row-sub" id="r-ak-ann">annual credit</div></div>
+      <div class="row-value" style="color:var(--accent);font-size:0.8rem" id="r-ak">—</div>
+    </div>
+    <div class="result-row indent" id="row-ahk">
+      <div><div class="row-name dim">└ incl. Alg. Heffingskorting</div><div class="row-sub" id="r-ahk-ann">annual credit</div></div>
+      <div class="row-value" style="color:var(--accent);font-size:0.8rem" id="r-ahk">—</div>
+    </div>
+
+    <div class="result-section-label">Netto</div>
+    <div class="result-row highlight">
+      <div><div class="row-name" style="font-weight:600">Totaal netto (excl. vakantiegeld)</div></div>
+      <div class="row-value big" id="r-net">—</div>
+    </div>
+
+    <div class="result-section-label">Reservering</div>
+    <div class="result-row">
+      <div><div class="row-name">Vakantiegeld opbouw</div><div class="row-sub" id="r-vak-pct">8% per month accrued</div></div>
+      <div class="row-value pos" id="r-vak-monthly">—</div>
+    </div>
+    <div class="result-row indent">
+      <div><div class="row-name dim">└ Jaarlijkse uitbetaling (May/June)</div></div>
+      <div class="row-value neu" id="r-vak-annual">—</div>
+    </div>
+
+    <!-- Net Banner -->
+    <div class="net-banner">
+      <div class="net-main">
+        <div class="net-label">Netto uitbetaling per maand</div>
+        <div class="net-amount" id="banner-net">€ —</div>
+        <div class="net-sub" id="banner-net-sub">to NL bank account</div>
+      </div>
+      <div class="net-vak">
+        <div class="net-label">Vakantiegeld (annual)</div>
+        <div class="net-amount" id="banner-vak">€ —</div>
+        <div class="net-sub">paid out in May / June</div>
+      </div>
+    </div>
+
+    <!-- Bar -->
+    <div class="bar-wrap">
+      <div class="bar-label">Salary breakdown</div>
+      <div class="bar">
+        <div class="bar-seg bar-net" id="seg-net" style="width:0%"></div>
+        <div class="bar-seg bar-tax" id="seg-tax" style="width:0%"></div>
+        <div class="bar-seg bar-pen" id="seg-pen" style="width:0%"></div>
+        <div class="bar-seg bar-wia" id="seg-wia" style="width:0%"></div>
+      </div>
+      <div class="legend">
+        <div class="legend-item"><div class="dot" style="background:var(--accent)"></div><span id="leg-net">Net pay</span></div>
+        <div class="legend-item"><div class="dot" style="background:var(--warn)"></div><span id="leg-tax">Loonheffing</span></div>
+        <div class="legend-item"><div class="dot" style="background:var(--accent2)"></div><span id="leg-pen">Pension</span></div>
+        <div class="legend-item"><div class="dot" style="background:#a78bfa"></div><span id="leg-wia">WIA</span></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- FOOTER -->
+  <div class="footer">
+    <strong>Tax rates used (2026):</strong><br>
+    Bracket 1: 35.75% up to €38,883 &nbsp;·&nbsp; Bracket 2: 37.56% up to €77,320 &nbsp;·&nbsp; Bracket 3: 49.50% above €77,320<br>
+    Max Arbeidskorting: €5,685 &nbsp;·&nbsp; Max Alg. Heffingskorting: €3,115<br><br>
+    <strong>Disclaimer:</strong> This is an estimate for informational purposes only. Actual payslip figures depend on your employer's payroll software, exact pension base, and personal circumstances. Consult your HR or payroll provider for authoritative calculations.
+  </div>
+
+</div>
+
+<script>
+  // ── Constants ──────────────────────────────────────────────────────────────
+  const B1_RATE = 0.3575, B1_LIM = 38883;
+  const B2_RATE = 0.3756, B2_LIM = 77320;
+  const B3_RATE = 0.495;
+
+  const MAX_AHK = 3115, AHK_START = 24813, AHK_RATE = 0.06337;
+  const MAX_ARK = 5685;
+  const ARK_R1 = 0.08231, ARK_L1 = 11490;
+  const ARK_R2 = 0.29861, ARK_L2 = 24820;
+  const ARK_PHASE_START = 43071, ARK_PHASE_RATE = 0.06510;
+
+  const PENSION_FRACTION = 1850.83 / 3193.0; // from reference payslip
+
+  // ── Helpers ────────────────────────────────────────────────────────────────
+  function eur(n) {
+    return new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(n);
+  }
+  function pct(n, d=2) { return n.toFixed(d) + '%'; }
+
+  function calcARK(ann) {
+    if (ann <= ARK_L1)  return ann * ARK_R1;
+    if (ann <= ARK_L2)  return ARK_L1*ARK_R1 + (ann-ARK_L1)*ARK_R2;
+    let base = MAX_ARK;
+    const ex = ann - ARK_PHASE_START;
+    if (ex > 0) base = Math.max(0, MAX_ARK - ex*ARK_PHASE_RATE);
+    return base;
+  }
+  function calcAHK(ann) {
+    const ex = ann - AHK_START;
+    if (ex <= 0) return MAX_AHK;
+    return Math.max(0, MAX_AHK - ex * AHK_RATE);
+  }
+  function grossTax(ann) {
+    if (ann <= B1_LIM) return ann * B1_RATE;
+    if (ann <= B2_LIM) return B1_LIM*B1_RATE + (ann-B1_LIM)*B2_RATE;
+    return B1_LIM*B1_RATE + (B2_LIM-B1_LIM)*B2_RATE + (ann-B2_LIM)*B3_RATE;
+  }
+
+  // ── Main calc ─────────────────────────────────────────────────────────────
+  function calc() {
+    const base   = parseFloat(document.getElementById('gross').value)   || 0;
+    const caoPct = parseFloat(document.getElementById('cao').value)     || 0;
+    const penPct = parseFloat(document.getElementById('pension').value) || 0;
+    const wiaPct = parseFloat(document.getElementById('wia').value)     || 0;
+    const vakPct = parseFloat(document.getElementById('vak').value)     || 0;
+    const lhk    = document.getElementById('lhk').checked;
+
+    const caoMul   = 1 + caoPct/100;
+    const adjusted = base * caoMul;
+    const caoAmt   = adjusted - base;
+
+    const wia     = adjusted * (wiaPct/100);
+    const penBase = adjusted * PENSION_FRACTION;
+    const pension = penBase  * (penPct/100);
+
+    const taxBase = adjusted - pension;
+    const annTax  = taxBase * 12;
+
+    const gTaxAnn = grossTax(annTax);
+    const ark     = lhk ? calcARK(annTax) : 0;
+    const ahk     = lhk ? calcAHK(annTax) : 0;
+    const netTaxAnn = Math.max(0, gTaxAnn - ark - ahk);
+    const lh      = netTaxAnn / 12;
+
+    const net     = adjusted - wia - pension - lh;
+    const vakMon  = adjusted * (vakPct/100);
+    const vakAnn  = vakMon  * 12;
+
+    // ── DOM Updates ──────────────────────────────────────────────────────────
+    const g = id => document.getElementById(id);
+
+    g('r-base').textContent       = eur(base);
+    g('r-cao-pct').textContent    = '+' + pct(caoPct,2);
+    g('r-cao-amt').textContent    = eur(caoAmt);
+    g('row-cao-adj').style.display = caoPct > 0 ? '' : 'none';
+    g('r-gross-adj').textContent  = eur(adjusted);
+
+    g('r-wia-pct').textContent    = pct(wiaPct,3);
+    g('r-wia').textContent        = '- ' + eur(wia);
+    g('r-pen-pct').textContent    = pct(penPct,3) + ' on pensionable base (' + pct(PENSION_FRACTION*100,1) + ' of gross)';
+    g('r-pension').textContent    = '- ' + eur(pension);
+    g('r-taxbase').textContent    = eur(taxBase);
+
+    const effRate = adjusted > 0 ? (lh/adjusted)*100 : 0;
+    g('r-lh-eff').textContent     = 'effective ' + pct(effRate,1) + ' of adjusted gross';
+    g('r-lh').textContent         = '- ' + eur(lh);
+
+    g('r-ak-ann').textContent     = eur(ark) + '/yr total credit';
+    g('r-ak').textContent         = lhk ? ('+ ' + eur(ark/12) + '/mo') : 'disabled';
+    g('r-ahk-ann').textContent    = eur(ahk) + '/yr total credit';
+    g('r-ahk').textContent        = lhk ? ('+ ' + eur(ahk/12) + '/mo') : 'disabled';
+    g('row-ak').style.opacity     = lhk ? '1' : '0.35';
+    g('row-ahk').style.opacity    = lhk ? '1' : '0.35';
+
+    g('r-net').textContent        = eur(net);
+    g('r-vak-pct').textContent    = pct(vakPct,1) + '% of adjusted gross, accrued monthly';
+    g('r-vak-monthly').textContent = eur(vakMon);
+    g('r-vak-annual').textContent  = eur(vakAnn);
+
+    g('banner-net').textContent   = eur(net);
+    g('banner-net-sub').textContent = `to bank account · ${pct((net/adjusted)*100,1)} of gross`;
+    g('banner-vak').textContent   = eur(vakAnn);
+
+    // Bar
+    const total = adjusted || 1;
+    g('seg-net').style.width = pct((net/total)*100,1);
+    g('seg-tax').style.width = pct((lh/total)*100,1);
+    g('seg-pen').style.width = pct((pension/total)*100,1);
+    g('seg-wia').style.width = pct((wia/total)*100,1);
+
+    g('leg-net').textContent = `Net pay (${pct((net/total)*100,0)})`;
+    g('leg-tax').textContent = `Loonheffing (${pct((lh/total)*100,0)})`;
+    g('leg-pen').textContent = `Pension (${pct((pension/total)*100,0)})`;
+    g('leg-wia').textContent = `WIA (${pct((wia/total)*100,1)})`;
+  }
+
+  // ── Event listeners ───────────────────────────────────────────────────────
+  ['gross','cao','pension','wia','vak','lhk'].forEach(id => {
+    document.getElementById(id).addEventListener('input', calc);
+  });
+
+  calc(); // initial render
+</script>
+</body>
+</html>
