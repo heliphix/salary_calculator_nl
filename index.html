@@ -22,6 +22,74 @@
       --muted: #6b7280;
       --mono: 'DM Mono', monospace;
       --sans: 'Syne', sans-serif;
+      --grid-line: rgba(79,255,176,0.03);
+      --hover-bg: #1e2230;
+      --card-header-bg: rgba(255,255,255,0.02);
+      --result-hover: rgba(255,255,255,0.02);
+      --result-border: rgba(255,255,255,0.03);
+      --highlight-bg: rgba(79,255,176,0.04);
+      --highlight-border: rgba(79,255,176,0.1);
+      --net-banner-bg: linear-gradient(135deg, rgba(79,255,176,0.08), rgba(59,130,246,0.06));
+      --net-banner-border: rgba(79,255,176,0.15);
+      --net-label-color: rgba(79,255,176,0.6);
+      --footer-strong: rgba(255,255,255,0.4);
+    }
+
+    html.light {
+      --bg: #f0f4f8;
+      --surface: #ffffff;
+      --card: #ffffff;
+      --border: #dde3ec;
+      --accent: #0a8a55;
+      --accent2: #2563eb;
+      --warn: #c2530a;
+      --danger: #dc2626;
+      --text: #1a202c;
+      --muted: #64748b;
+      --grid-line: rgba(10,138,85,0.04);
+      --hover-bg: #f7fafc;
+      --card-header-bg: rgba(0,0,0,0.02);
+      --result-hover: rgba(0,0,0,0.015);
+      --result-border: rgba(0,0,0,0.04);
+      --highlight-bg: rgba(10,138,85,0.05);
+      --highlight-border: rgba(10,138,85,0.15);
+      --net-banner-bg: linear-gradient(135deg, rgba(10,138,85,0.07), rgba(37,99,235,0.05));
+      --net-banner-border: rgba(10,138,85,0.2);
+      --net-label-color: rgba(10,138,85,0.7);
+      --footer-strong: rgba(0,0,0,0.45);
+    }
+
+    /* Smooth theme transitions */
+    body, .card, .card-header, .input-cell, input[type="number"], .result-row,
+    .net-banner, .footer, .bar, .slider, header {
+      transition: background 0.25s ease, border-color 0.25s ease, color 0.25s ease,
+                  box-shadow 0.25s ease;
+    }
+
+    /* Theme toggle button */
+    .theme-btn {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 100;
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: var(--muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+      transition: background 0.25s, border-color 0.25s, transform 0.15s, box-shadow 0.25s;
+    }
+    .theme-btn:hover {
+      transform: scale(1.08);
+      box-shadow: 0 4px 18px rgba(0,0,0,0.2);
+      border-color: var(--accent);
     }
 
     body {
@@ -39,8 +107,8 @@
       position: fixed;
       inset: 0;
       background-image:
-        linear-gradient(rgba(79,255,176,0.03) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(79,255,176,0.03) 1px, transparent 1px);
+        linear-gradient(var(--grid-line) 1px, transparent 1px),
+        linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
       background-size: 40px 40px;
       pointer-events: none;
       z-index: 0;
@@ -113,7 +181,7 @@
       justify-content: space-between;
       padding: 16px 24px;
       border-bottom: 1px solid var(--border);
-      background: rgba(255,255,255,0.02);
+      background: var(--card-header-bg);
     }
     .card-title {
       font-size: 0.7rem;
@@ -148,7 +216,7 @@
       padding: 20px 24px;
       transition: background 0.15s;
     }
-    .input-cell:hover { background: #1e2230; }
+    .input-cell:hover { background: var(--hover-bg); }
     .input-cell.full { grid-column: 1 / -1; }
 
     label {
@@ -240,15 +308,15 @@
       align-items: center;
       justify-content: space-between;
       padding: 9px 24px;
-      border-bottom: 1px solid rgba(255,255,255,0.03);
+      border-bottom: 1px solid var(--result-border);
       transition: background 0.1s;
     }
-    .result-row:hover { background: rgba(255,255,255,0.02); }
+    .result-row:hover { background: var(--result-hover); }
     .result-row.indent { padding-left: 40px; }
     .result-row.highlight {
-      background: rgba(79,255,176,0.04);
-      border-top: 1px solid rgba(79,255,176,0.1);
-      border-bottom: 1px solid rgba(79,255,176,0.1);
+      background: var(--highlight-bg);
+      border-top: 1px solid var(--highlight-border);
+      border-bottom: 1px solid var(--highlight-border);
     }
 
     .row-name { font-size: 0.85rem; color: var(--text); }
@@ -270,8 +338,8 @@
     .net-banner {
       margin: 0;
       padding: 28px 24px;
-      background: linear-gradient(135deg, rgba(79,255,176,0.08), rgba(59,130,246,0.06));
-      border-top: 1px solid rgba(79,255,176,0.15);
+      background: var(--net-banner-bg);
+      border-top: 1px solid var(--net-banner-border);
       display: flex;
       justify-content: space-between;
       align-items: flex-end;
@@ -284,7 +352,7 @@
       font-size: 0.68rem;
       letter-spacing: 0.12em;
       text-transform: uppercase;
-      color: rgba(79,255,176,0.6);
+      color: var(--net-label-color);
     }
     .net-amount {
       font-size: clamp(2rem, 6vw, 2.8rem);
@@ -365,18 +433,32 @@
       line-height: 1.8;
       animation: fadeUp 0.6s ease 0.3s both;
     }
-    .footer strong { color: rgba(255,255,255,0.4); }
+    .footer strong { color: var(--footer-strong); }
 
     @keyframes fadeUp {
       from { opacity: 0; transform: translateY(16px); }
       to   { opacity: 1; transform: translateY(0); }
     }
 
-    /* CAO highlight */
-    #cao-val { color: var(--accent); font-weight: 700; }
+    select#taxYear {
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 1.1rem;
+      font-weight: 500;
+      padding: 10px 14px;
+      outline: none;
+      transition: border-color 0.2s, background 0.25s, color 0.25s;
+      cursor: pointer;
+    }
+    select#taxYear:focus { border-color: var(--accent); }
   </style>
 </head>
 <body>
+<button class="theme-btn" id="themeBtn" title="Toggle light/dark mode">🌙</button>
 <div class="page">
 
   <header>
@@ -395,7 +477,7 @@
     <div class="input-grid">
       <div class="input-cell">
         <label for="taxYear">Belastingjaar / Tax year</label>
-        <select id="taxYear" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--mono);font-size:1.1rem;font-weight:500;padding:10px 14px;outline:none;">
+        <select id="taxYear">
           <option value="2026" selected>2026</option>
           <option value="2025">2025</option>
         </select>
@@ -466,6 +548,31 @@
           </label>
         </div>
       </div>
+      <div class="input-cell" style="display:flex;align-items:center;">
+        <div>
+          <label style="margin-bottom:10px;">30% Ruling (expat regeling)</label>
+          <label class="toggle-row">
+            <span class="toggle">
+              <input type="checkbox" id="ruling30">
+              <span class="slider"></span>
+            </span>
+            <span>
+              <div class="toggle-label">30% ruling toepassen</div>
+              <div class="toggle-desc">Tax-free allowance for expats</div>
+            </span>
+          </label>
+          <label class="toggle-row" id="row-masters" style="margin-top:10px;display:none">
+            <span class="toggle">
+              <input type="checkbox" id="masters">
+              <span class="slider"></span>
+            </span>
+            <span>
+              <div class="toggle-label">Under 30 + Master's degree</div>
+              <div class="toggle-desc">Lower salary threshold applies</div>
+            </span>
+          </label>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -488,6 +595,20 @@
     <div class="result-row highlight">
       <div><div class="row-name" style="font-weight:600">Bruto salaris (adjusted)</div></div>
       <div class="row-value big" id="r-gross-adj">—</div>
+    </div>
+
+    <div class="result-section-label" id="section-ruling" style="display:none">30% Ruling</div>
+    <div class="result-row" id="row-ruling-allowance" style="display:none">
+      <div><div class="row-name">Belastingvrije vergoeding (30%)</div><div class="row-sub" id="r-ruling-sub">30% × gross — onbelast</div></div>
+      <div class="row-value" style="color:var(--accent)" id="r-ruling-allowance">—</div>
+    </div>
+    <div class="result-row" id="row-ruling-taxable" style="display:none">
+      <div><div class="row-name dim">└ Belastbaar loon (70%)</div><div class="row-sub">loonheffing applied on this</div></div>
+      <div class="row-value neu" id="r-ruling-taxable">—</div>
+    </div>
+    <div class="result-row" id="row-ruling-ineligible" style="display:none" style="border-left:3px solid var(--warn)">
+      <div><div class="row-name" style="color:var(--warn)">⚠ Salary below 30% ruling threshold</div><div class="row-sub" id="r-ruling-ineligible-sub">—</div></div>
+      <div class="row-value" style="color:var(--warn)" id="r-ruling-ineligible-amt">—</div>
     </div>
 
     <div class="result-section-label">Inhoudingen (deductions)</div>
@@ -545,6 +666,10 @@
     <div class="result-row highlight" id="row-net-travel" style="display:none">
       <div><div class="row-name" style="font-weight:600">Totaal netto incl. reiskosten</div></div>
       <div class="row-value big" id="r-net-total">—</div>
+    </div>
+    <div class="result-row indent" id="row-ruling-saving" style="display:none">
+      <div><div class="row-name dim">└ 30% ruling saves you vs no ruling</div><div class="row-sub" id="r-ruling-saving-sub">—</div></div>
+      <div class="row-value" style="color:var(--accent)" id="r-ruling-saving">—</div>
     </div>
     <div class="result-row indent" id="row-union-compare" style="display:none">
       <div><div class="row-name dim">└ Without union fee (for comparison)</div><div class="row-sub" id="r-union-compare-sub">paying fee out-of-pocket instead</div></div>
@@ -641,6 +766,12 @@
   const PENSION_BASE_MONTHLY = 1700.42; // Fixed franchise base — validated from payslips
   const PENSION_FRANCHISE    = 1492.58; // Monthly franchise (drempel): 3193 - 1700.42
 
+  // 30% Ruling (expat regeling) — 2026 rules
+  const RULING_PCT        = 0.30;           // 30% tax-free allowance (drops to 27% in 2027)
+  const RULING_MIN_STD    = 48013;          // min annual TAXABLE salary after deduction (age 30+)
+  const RULING_MIN_MSC    = 36497;          // min annual TAXABLE salary — under 30 + Master's
+  const RULING_WNT_CAP    = 262000;         // annual gross cap (WNT/Balkenende norm 2026)
+
   // ── Helpers ───────────────────────────────────────────────────────────────
   function eur(n) {
     return new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(n);
@@ -695,31 +826,42 @@
     const unionAnn    = Math.max(0, parseFloat(document.getElementById('union').value)       || 0);
     const unionTaxPct = Math.min(100, Math.max(0, parseFloat(document.getElementById('unionTaxPct').value) || 100));
     const lhk         = document.getElementById('lhk').checked;
+    const ruling30    = document.getElementById('ruling30').checked;
+    const masters     = document.getElementById('masters').checked;
 
     // Step 1: Apply CAO increase — adjusted always >= 0 (base clamped above)
     const adjusted = base * (1 + caoPct/100);
     const caoAmt   = adjusted - base;
 
+    // Step 1b: 30% Ruling — tax-free allowance on portion of gross (up to WNT cap)
+    // Eligibility: taxable portion (70% of gross) must meet annual minimum
+    const annGross        = adjusted * 12;
+    const rulingMinTaxable = masters ? RULING_MIN_MSC : RULING_MIN_STD;
+    const rulingMinGross   = rulingMinTaxable / (1 - RULING_PCT); // gross needed to qualify
+    const rulingEligible   = ruling30 && annGross >= rulingMinGross;
+    // Tax-free portion: 30% of gross up to WNT cap
+    const rulingEligibleGross = Math.min(annGross, RULING_WNT_CAP);
+    const rulingTaxFreeAnn    = rulingEligible ? rulingEligibleGross * RULING_PCT : 0;
+    const rulingTaxFreeMonthly = rulingTaxFreeAnn / 12;
+    // Taxable gross after ruling deduction
+    const taxableGrossMonthly = adjusted - rulingTaxFreeMonthly;
+
     // Step 2: Union fee — cap at adjusted gross so wiaBase never goes negative
     const unionMon = Math.min(unionAnn / 12, adjusted);
 
-    // Step 3: WIA — base floored at 0; WIA deduction capped so net never goes negative from WIA alone
+    // Step 3: WIA — on full gross (not reduced by ruling), base floored at 0
     const wiaBase    = Math.max(0, adjusted - unionMon);
+    const pensionEst = Math.max(0, adjusted - PENSION_FRANCHISE) * (penPct / 100);
     const wiaRaw     = wiaBase * (wiaPct / 100);
-    const pensionEst = Math.max(0, adjusted - PENSION_FRANCHISE) * (penPct / 100); // estimate for cap
     const wia        = Math.min(wiaRaw, Math.max(0, adjusted - pensionEst));
 
-    // Step 4: Pension — pensionable salary = max(0, gross - franchise)
-    // Franchise (drempel) = €1,492.58/mo, derived from payslip: 3193 - 1700.42
-    // Below the franchise, no pension is deducted
+    // Step 4: Pension — on full gross (ruling doesn't reduce pension base)
     const penBaseFixed = Math.max(0, adjusted - PENSION_FRANCHISE);
     const pension      = penBaseFixed * (penPct / 100);
 
-    // Step 5: Loonheffing taxable base = gross - pension (union handled via BT separately)
-    // Payslip Dec-2025: 3193 - 174.80 = 3018.20 ... but payslip shows 3009.93
-    // Difference = 3018.20 - 3009.93 = 8.27 = WIA amount
-    // So actual taxBase = gross - pension - WIA (Chroma includes WIA in taxable base reduction)
-    const taxBase = Math.max(0, adjusted - pension - wia);
+    // Step 5: Loonheffing taxable base — uses TAXABLE gross (after ruling deduction)
+    // Pension and WIA still deducted from taxable base as per standard method
+    const taxBase = Math.max(0, taxableGrossMonthly - pension - wia);
     const annTax  = taxBase * 12;
 
     // Step 6: Loonheffing — annual bracket method with ARK + AHK credits
@@ -738,11 +880,18 @@
     const unionWkrRefund = unionMon; // full fee reimbursed net (WKR onbelast)
 
     // Step 8: Net pay
-    // gross − union(SVW deduct) − WIA − pension − loonheffing + BT refund + WKR reimbursement
-    const net = adjusted - unionMon - wia - pension - lh + unionBtRefund + unionWkrRefund;
+    // gross − union(SVW deduct) − WIA − pension − loonheffing + BT refund + WKR reimbursement + ruling allowance
+    const net = adjusted - unionMon - wia - pension - lh + unionBtRefund + unionWkrRefund + rulingTaxFreeMonthly;
 
-    // Step 9: Net WITHOUT any union (for comparison — same loonheffing since taxBase uses gross−pension−wia)
-    const netNoUnion = adjusted - wia - pension - lh;
+    // Step 9: Net WITHOUT any union (for comparison)
+    const netNoUnion = adjusted - wia - pension - lh + rulingTaxFreeMonthly;
+
+    // Step 9b: Net WITHOUT ruling (for savings comparison)
+    // Recalculate loonheffing on full gross (no ruling deduction)
+    const taxBaseNoRuling = Math.max(0, adjusted - pension - wia);
+    const lhNoRuling      = Math.max(0, grossTax(taxBaseNoRuling * 12, r) - (lhk ? calcARK(taxBaseNoRuling * 12, r) : 0) - (lhk ? calcAHK(taxBaseNoRuling * 12, r) : 0)) / 12;
+    const netNoRuling     = adjusted - unionMon - wia - pension - lhNoRuling + unionBtRefund + unionWkrRefund;
+    const rulingSavingMon = rulingEligible ? net - netNoRuling : 0;
 
     // Step 10: Vakantiegeld
     // Accrues monthly (bruto), paid out once/year (May/June)
@@ -772,6 +921,39 @@
     g('r-cao-amt').textContent     = eur(caoAmt);
     g('row-cao-adj').style.display = caoPct > 0 ? '' : 'none';
     g('r-gross-adj').textContent   = eur(adjusted);
+
+    // 30% Ruling rows
+    g('row-masters').style.display = ruling30 ? '' : 'none';
+    if (ruling30) {
+      g('section-ruling').style.display         = '';
+      g('row-ruling-allowance').style.display   = '';
+      g('row-ruling-taxable').style.display     = '';
+      g('row-ruling-ineligible').style.display  = 'none';
+      if (rulingEligible) {
+        const capNote = annGross > RULING_WNT_CAP ? ` (capped at WNT €${(RULING_WNT_CAP/12).toFixed(0)}/mo)` : '';
+        g('r-ruling-sub').textContent       = `30% × ${eur(adjusted)}${capNote} — onbelast maandelijks`;
+        g('r-ruling-allowance').textContent = '+ ' + eur(rulingTaxFreeMonthly) + '/mo';
+        g('r-ruling-taxable').textContent   = eur(taxableGrossMonthly) + '/mo taxable';
+        g('row-ruling-saving').style.display = '';
+        g('r-ruling-saving-sub').textContent = `+ ${eur(rulingSavingMon * 12)}/yr · ${eur(rulingSavingMon)}/mo extra net`;
+        g('r-ruling-saving').textContent     = '+ ' + eur(rulingSavingMon) + '/mo';
+      } else {
+        g('row-ruling-allowance').style.display  = 'none';
+        g('row-ruling-taxable').style.display    = 'none';
+        g('row-ruling-saving').style.display     = 'none';
+        g('row-ruling-ineligible').style.display = '';
+        const needed = (rulingMinGross / 12).toFixed(0);
+        const thresh = (rulingMinTaxable).toLocaleString('nl-NL');
+        g('r-ruling-ineligible-sub').textContent = `Need gross ≥ €${needed}/mo · taxable 70% must be ≥ €${thresh}/yr`;
+        g('r-ruling-ineligible-amt').textContent = `Need €${(rulingMinGross/12 - adjusted).toFixed(0)}/mo more`;
+      }
+    } else {
+      g('section-ruling').style.display        = 'none';
+      g('row-ruling-allowance').style.display  = 'none';
+      g('row-ruling-taxable').style.display    = 'none';
+      g('row-ruling-ineligible').style.display = 'none';
+      g('row-ruling-saving').style.display     = 'none';
+    }
 
     g('r-wia-pct').textContent  = pct(wiaPct,3) + ' × (gross' + (unionMon>0?' − union fee':'') + ')';
     g('r-wia').textContent      = '- ' + eur(wia);
@@ -874,11 +1056,27 @@
   }
 
   // ── Event listeners ───────────────────────────────────────────────────────
-  ['taxYear','gross','cao','pension','wia','vak','travelKm','travelRate','travelDays','union','unionTaxPct','lhk'].forEach(id => {
+  ['taxYear','gross','cao','pension','wia','vak','travelKm','travelRate','travelDays','union','unionTaxPct','lhk','ruling30','masters'].forEach(id => {
     document.getElementById(id).addEventListener('input', calc);
   });
 
   calc(); // initial render
+
+  // ── Theme toggle ─────────────────────────────────────────────────────────
+  const themeBtn = document.getElementById('themeBtn');
+  const html     = document.documentElement;
+
+  // Restore saved preference
+  if (localStorage.getItem('theme') === 'light') {
+    html.classList.add('light');
+    themeBtn.textContent = '☀️';
+  }
+
+  themeBtn.addEventListener('click', () => {
+    const isLight = html.classList.toggle('light');
+    themeBtn.textContent = isLight ? '☀️' : '🌙';
+    localStorage.setItem('theme', isLight ? 'light' : 'dark');
+  });
 </script>
 </body>
 </html>
