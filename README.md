@@ -1,1 +1,1 @@
-A simple salary calculator based on a Dutch payslip
+This is a simple salary calculator based on the Dutch payslip.
