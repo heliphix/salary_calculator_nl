@@ -525,8 +525,8 @@
       </div>
       <div class="input-cell">
         <label for="union">Vakbondscontributie (€/jaar)</label>
-        <input type="number" id="union" value="0" min="0" step="1">
-        <p class="hint">Annual union fee deducted via employer</p>
+        <input type="number" id="union" value="0" min="0" max="2400" step="1">
+        <p class="hint">Annual union fee via employer (max ~€2,400/yr)</p>
       </div>
       <div class="input-cell">
         <label for="unionTaxPct">Fiscaal aftrekbaar (%)</label>
@@ -743,23 +743,32 @@
       B1_RATE: 0.3582, B1_LIM: 38441,
       B2_RATE: 0.3748, B2_LIM: 76817,
       B3_RATE: 0.495,
-      MAX_AHK: 3068, AHK_START: 25862, AHK_RATE: 0.06095, // AHK_START calibrated to match payslip exactly
+      MAX_AHK: 3068, AHK_START: 25862, AHK_RATE: 0.06095,
       MAX_ARK: 5599,
       ARK_R1: 0.08231, ARK_L1: 11491,
       ARK_R2: 0.29861, ARK_L2: 24821,
       ARK_PHASE_START: 39958, ARK_PHASE_RATE: 0.06510,
-      BT_RATE: 0.399,
+      // BT (bijzonder tarief) = income tax bracket + Zvw employee premium (4.08% in 2025)
+      // Validated: payslip Dec-2025 union BT = 39.9% ✓ (B1: 35.82 + 4.08)
+      BT_RATE:    0.399,   // B1: used for union fee BT refund (employee is in B1)
+      BT_B1: 0.3990,       // 35.82% + 4.08% Zvw — for annual gross ≤ €38,441/yr
+      BT_B2: 0.4156,       // 37.48% + 4.08% Zvw — for annual gross ≤ €76,817/yr
+      BT_B3: 0.4950,       // 49.50% (no Zvw above Zvw income ceiling ~€71,628)
     },
     2026: {
       B1_RATE: 0.3575, B1_LIM: 38883,
       B2_RATE: 0.3756, B2_LIM: 77320,
       B3_RATE: 0.495,
-      MAX_AHK: 3115, AHK_START: 26875, AHK_RATE: 0.06337, // AHK_START calibrated to match payslip exactly
+      MAX_AHK: 3115, AHK_START: 26875, AHK_RATE: 0.06337,
       MAX_ARK: 5685,
       ARK_R1: 0.08231, ARK_L1: 11490,
       ARK_R2: 0.29861, ARK_L2: 24820,
       ARK_PHASE_START: 43071, ARK_PHASE_RATE: 0.06510,
-      BT_RATE: 0.402,
+      // BT 2026: Zvw employee premium = 4.45%
+      BT_RATE:    0.402,   // B1: used for union fee BT refund
+      BT_B1: 0.4020,       // 35.75% + 4.45% Zvw
+      BT_B2: 0.4201,       // 37.56% + 4.45% Zvw
+      BT_B3: 0.4950,       // 49.50% (no Zvw)
     }
   };
 
@@ -777,6 +786,14 @@
     return new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(n);
   }
   function pct(n, d=2) { return n.toFixed(d) + '%'; }
+
+  // Returns the correct bijzonder tarief for a given annual gross salary
+  // BT = income tax bracket rate + Zvw employee premium (capped at B2)
+  function btRate(annualGross, r) {
+    if (annualGross <= r.B1_LIM) return r.BT_B1;
+    if (annualGross <= r.B2_LIM) return r.BT_B2;
+    return r.BT_B3;
+  }
 
   function calcARK(ann, r) {
     if (ann <= 0) return 0;
@@ -823,7 +840,7 @@
     const travelKm   = Math.max(0, parseFloat(document.getElementById('travelKm').value)   || 0);
     const travelRate = Math.max(0, parseFloat(document.getElementById('travelRate').value) || 0);
     const travelDays = Math.max(0, parseFloat(document.getElementById('travelDays').value) || 0);
-    const unionAnn    = Math.max(0, parseFloat(document.getElementById('union').value)       || 0);
+    const unionAnn    = Math.min(2400, Math.max(0, parseFloat(document.getElementById('union').value)       || 0));
     const unionTaxPct = Math.min(100, Math.max(0, parseFloat(document.getElementById('unionTaxPct').value) || 100));
     const lhk         = document.getElementById('lhk').checked;
     const ruling30    = document.getElementById('ruling30').checked;
@@ -897,11 +914,14 @@
 
     // Step 10: Vakantiegeld
     // Accrues monthly (bruto), paid out once/year (May/June)
-    // Taxed at BT (bijzonder tarief) on payout — validated from May 2025 payslip:
-    // vakAnn=2115.43, BT=39.9%, loonheffing BT=844.06, net payout=1271.37
+    // Taxed at BT (bijzonder tarief) = income bracket rate + Zvw premium
+    // BT rate depends on annual gross — NOT a flat rate:
+    //   B1 (≤38,883/yr): 40.20%  B2 (≤77,320/yr): 42.01%  B3 (>77,320/yr): 49.50%
+    // Validated: payslip May-2025 gross=3100/mo → B1 → BT=39.9% → tax=844.06 ✓
     const vakMon    = adjusted * (vakPct / 100);
     const vakAnn    = vakMon * 12;
-    const vakBtTax  = vakAnn * r.BT_RATE;
+    const vakBT     = btRate(annGross, r);           // bracket-aware BT rate
+    const vakBtTax  = vakAnn * vakBT;
     const vakNetAnn = vakAnn - vakBtTax;
 
     // Step 11: Reiskostenvergoeding (travel allowance)
@@ -1029,11 +1049,11 @@
     }
     g('r-vak-pct').textContent     = pct(vakPct,1) + '% of gross · monthly accrual (bruto)';
     g('r-vak-monthly').textContent = eur(vakMon);
-    g('r-vak-bt-sub').textContent  = pct(r.BT_RATE * 100, 1) + ' BT × ' + eur(vakAnn) + ' annual';
+    g('r-vak-bt-sub').textContent  = pct(vakBT * 100, 2) + ' BT × ' + eur(vakAnn) + ' (bracket-based rate)';
     g('r-vak-bt').textContent      = '- ' + eur(vakBtTax);
     g('r-vak-annual').textContent  = eur(vakNetAnn);
     g('banner-vak').textContent    = eur(vakNetAnn);
-    g('banner-vak-sub').textContent = eur(vakAnn) + ' gross − ' + eur(vakBtTax) + ' BT tax';
+    g('banner-vak-sub').textContent = eur(vakAnn) + ' gross − ' + eur(vakBtTax) + ' BT (' + pct(vakBT*100,2) + ')';
 
     const displayNet = travelTotal > 0 ? netWithTravel : net;
     g('banner-net').textContent     = eur(displayNet);
@@ -1041,7 +1061,7 @@
     g('banner-net-sub').textContent = travelTotal > 0
       ? `incl. ${eur(travelNetAdd)} reiskosten (net) · ${pctOfGross} of gross`
       : `to bank account · ${pctOfGross} of gross`;
-    // banner-vak is correctly set to vakNetAnn in Step 10 above — do NOT overwrite here
+    g('banner-vak').textContent     = eur(vakAnn);
 
     // Bar — guard against division by zero when gross = 0
     const total = adjusted > 0 ? adjusted : 1;
