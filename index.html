@@ -485,7 +485,7 @@
       </div>
       <div class="input-cell">
         <label for="gross">Bruto maandsalaris (€)</label>
-        <input type="number" id="gross" value="4000" min="0" step="1">
+        <input type="number" id="gross" value="3193" min="0" step="1">
         <p class="hint">Your monthly gross salary</p>
       </div>
       <div class="input-cell">
@@ -880,11 +880,13 @@
     const unionWkrRefund = unionMon; // full fee reimbursed net (WKR onbelast)
 
     // Step 8: Net pay
-    // gross − union(SVW deduct) − WIA − pension − loonheffing + BT refund + WKR reimbursement + ruling allowance
-    const net = adjusted - unionMon - wia - pension - lh + unionBtRefund + unionWkrRefund + rulingTaxFreeMonthly;
+    // gross − union(SVW deduct) − WIA − pension − loonheffing + BT refund + WKR reimbursement
+    // NOTE: 30% ruling is NOT added here — it is already captured by computing lh on taxableGrossMonthly
+    // (70% of gross). Adding it again would double-count the benefit.
+    const net = adjusted - unionMon - wia - pension - lh + unionBtRefund + unionWkrRefund;
 
     // Step 9: Net WITHOUT any union (for comparison)
-    const netNoUnion = adjusted - wia - pension - lh + rulingTaxFreeMonthly;
+    const netNoUnion = adjusted - wia - pension - lh;
 
     // Step 9b: Net WITHOUT ruling (for savings comparison)
     // Recalculate loonheffing on full gross (no ruling deduction)
