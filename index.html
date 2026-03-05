@@ -1041,7 +1041,7 @@
     g('banner-net-sub').textContent = travelTotal > 0
       ? `incl. ${eur(travelNetAdd)} reiskosten (net) · ${pctOfGross} of gross`
       : `to bank account · ${pctOfGross} of gross`;
-    g('banner-vak').textContent     = eur(vakAnn);
+    // banner-vak is correctly set to vakNetAnn in Step 10 above — do NOT overwrite here
 
     // Bar — guard against division by zero when gross = 0
     const total = adjusted > 0 ? adjusted : 1;
